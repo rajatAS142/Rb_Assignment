@@ -8,6 +8,6 @@ Tables extracted:
 5. 	Mobility
 6. 	Vaccinations
 
-Silver Layer: In this layer we are doing some transformation using the tables in the bronze layer
+Silver Layer: In this layer we are doing some transformation using the tables in the bronze layer.
 Tables Created:
 1. Aggregated table
