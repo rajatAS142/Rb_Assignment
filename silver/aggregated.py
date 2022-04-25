@@ -105,12 +105,68 @@ else:
     (
         table.alias("Hot")
         .merge(
-            source = save_sales_rep.alias("New"),
-            condition = F.expr(f""" Hot.location_key = New.location_key
-                                    AND Hot.date = New.date
+            source = df.alias("New"),
+            condition = F.expr(f""" Hot.date = New.date
+                                    AND Hot.location_key = New.location_key
                                 """)
         )
-        .whenMatchedUpdate()
+        .whenMatchedUpdate(set = {
+            'location_key' :   F.col('New.location_key'),                                   
+            'date' :   F.col('New.date'),                                  
+            'new_confirmed' :  F.col('New.new_confirmed'),                                      
+            'new_deceased' :  F.col('New.new_deceased'),                                   
+            'new_recovered' :  F.col('New.new_recovered'),                                      
+            'new_tested' :  F.col('New.new_tested'),                                     
+            'cumulative_confirmed' :  F.col('New.cumulative_confirmed'),                                   
+            'cumulative_deceased' :  F.col('New.cumulative_deceased'),                                    
+            'cumulative_recovered' :  F.col('New.cumulative_recovered'),                                   
+            'cumulative_tested' :   F.col('New.cumulative_tested'),                                     
+            'new_hospitalized_patients' : F.col('New.new_hospitalized_patients'),                                       
+            'cumulative_hospitalized_patients' : F.col('New.cumulative_hospitalized_patients'),                                    
+            'current_hospitalized_patients' :  F.col('New.current_hospitalized_patients'),                                      
+            'new_intensive_care_patients' :  F.col('New.new_intensive_care_patients'),                                    
+            'cumulative_intensive_care_patients' : F.col('New.cumulative_intensive_care_patients'),                                      
+            'current_intensive_care_patients' :  F.col('New.current_intensive_care_patients'),                                    
+            'new_ventilator_patients' :  F.col('New.new_ventilator_patients'),                                    
+            'cumulative_ventilator_patients' : F.col('New.cumulative_ventilator_patients'),                                      
+            'current_ventilator_patients' :  F.col('New.current_ventilator_patients'),                                    
+            'mobility_retail_and_recreation' : F.col('New.mobility_retail_and_recreation'),                                      
+            'mobility_grocery_and_pharmacy' :  F.col('New.mobility_grocery_and_pharmacy'),                                      
+            'mobility_parks' :  F.col('New.mobility_parks'),                                     
+            'mobility_transit_stations' : F.col('New.mobility_transit_stations'),                                       
+            'mobility_workplaces' :  F.col('New.mobility_workplaces'),                                    
+            'mobility_residential' : F.col('New.mobility_residential'),                                    
+            'new_persons_vaccinated' : F.col('New.new_persons_vaccinated'),                                      
+            'cumulative_persons_vaccinated' : F.col('New.cumulative_persons_vaccinated'),                                       
+            'new_persons_fully_vaccinated' :  F.col('New.new_persons_fully_vaccinated'),                                   
+            'cumulative_persons_fully_vaccinated' : F.col('New.cumulative_persons_fully_vaccinated'),                                     
+            'new_vaccine_doses_administered' :  F.col('New.new_vaccine_doses_administered'),                                     
+            'cumulative_vaccine_doses_administered' : F.col('New.cumulative_vaccine_doses_administered'),                                       
+            'new_persons_vaccinated_pfizer' :  F.col('New.new_persons_vaccinated_pfizer'),                                      
+            'cumulative_persons_vaccinated_pfizer' : F.col('New.cumulative_persons_vaccinated_pfizer'),                                    
+            'new_persons_fully_vaccinated_pfizer' :  F.col('New.new_persons_fully_vaccinated_pfizer'),                                    
+            'cumulative_persons_fully_vaccinated_pfizer' : F.col('New.cumulative_persons_fully_vaccinated_pfizer'),                                      
+            'new_vaccine_doses_administered_pfizer' :  F.col('New.new_vaccine_doses_administered_pfizer'),                                      
+            'cumulative_vaccine_doses_administered_pfizer' :  F.col('New.cumulative_vaccine_doses_administered_pfizer'),                                   
+            'new_persons_vaccinated_moderna' : F.col('New.new_persons_vaccinated_moderna'),                                      
+            'cumulative_persons_vaccinated_moderna' : F.col('New.cumulative_persons_vaccinated_moderna'),                                       
+            'new_persons_fully_vaccinated_moderna' :  F.col('New.new_persons_fully_vaccinated_moderna'),                                   
+            'cumulative_persons_fully_vaccinated_moderna' :  F.col('New.cumulative_persons_fully_vaccinated_moderna'),                                    
+            'new_vaccine_doses_administered_moderna' :  F.col('New.new_vaccine_doses_administered_moderna'),                                     
+            'cumulative_vaccine_doses_administered_moderna' : F.col('New.cumulative_vaccine_doses_administered_moderna'),                                        
+            'new_persons_vaccinated_janssen' :  F.col('New.new_persons_vaccinated_janssen'),                                     
+            'cumulative_persons_vaccinated_janssen' :  F.col('New.cumulative_persons_vaccinated_janssen'),                                      
+            'new_persons_fully_vaccinated_janssen' :  F.col('New.new_persons_fully_vaccinated_janssen'),                                   
+            'cumulative_persons_fully_vaccinated_janssen' :  F.col('New.cumulative_persons_fully_vaccinated_janssen'),                                    
+            'new_vaccine_doses_administered_janssen' :  F.col('New.new_vaccine_doses_administered_janssen'),                                     
+            'cumulative_vaccine_doses_administered_janssen' : F.col('New.cumulative_vaccine_doses_administered_janssen'),                                       
+            'new_persons_vaccinated_sinovac' :  F.col('New.new_persons_vaccinated_sinovac'),                                     
+            'total_persons_vaccinated_sinovac' : F.col('New.total_persons_vaccinated_sinovac'),                                    
+            'new_persons_fully_vaccinated_sinovac' :  F.col('New.new_persons_fully_vaccinated_sinovac'),                                   
+            'total_persons_fully_vaccinated_sinovac' : F.col('New.total_persons_fully_vaccinated_sinovac'),                                      
+            'new_vaccine_doses_administered_sinovac' :  F.col('New.new_vaccine_doses_administered_sinovac'),                                     
+            'total_vaccine_doses_administered_sinovac' : F.col('New.total_vaccine_doses_administered_sinovac')                                    
+        })
         .whenNotMatchedInsertAll()
     ).execute()
     logging.info(f'Finished merging data to Silver Layer')

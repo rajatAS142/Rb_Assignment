@@ -60,11 +60,10 @@ bq_df = spark.read.format("bigquery") \
 
 # COMMAND ----------
 
-def replace_where(df, batchId):
-    logger.info(f'batch id: {batchId} count: {df.count()}')
+    logging.info('started writing...')
     if len(list(filter(lambda x: True if x.name == bronze_table_name else False,spark.catalog.listTables(bronze_database)))) == 0:
         # TABLE DOES NOT EXIST
-        logger.info(f'Creating table and saving data to Bronze Layer')
+        logging.info(f'Creating table and saving data to Bronze Layer')
         (df
                 .write
                 .format('delta')
@@ -74,7 +73,7 @@ def replace_where(df, batchId):
                 .partitionBy(partition_by)
                 .option('path', bronze_datalake_location)
                 .saveAsTable(f'{bronze_database}.{bronze_table_name}'))
-        logger.info(f'finished writing data to Bronze Layer: {bronze_database}.{bronze_table_name}')
+        logging.info(f'finished writing data to Bronze Layer: {bronze_database}.{bronze_table_name}')
     
     else : 
         
