@@ -27,6 +27,7 @@ import io
 from re import sub
 debug = False
 from delta.tables import *
+import pandas
 
 # COMMAND ----------
 
@@ -47,15 +48,14 @@ partition_by = "date"
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC import pandas
-# MAGIC data = pandas.read_csv(raw_table_path)
-# MAGIC df = spark.createDataFrame(data)
-# MAGIC 
-# MAGIC bq_df = spark.read.format("bigquery") \
-# MAGIC   .option("table", table) \
-# MAGIC   .option("project", project_id) \
-# MAGIC   .load()
+logging.info(f'reading source tables ...')
+data = pandas.read_csv(raw_table_path)
+df = spark.createDataFrame(data)
+
+bq_df = spark.read.format("bigquery") \
+  .option("table", table) \
+  .option("project", project_id) \
+  .load()
 
 # COMMAND ----------
 
