@@ -1,24 +1,25 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # epidemiology Bronze Table
+# MAGIC # hospitalizations Bronze Table
 # MAGIC 
-# MAGIC The goal of this script is to create epidemiology Bronze table 
+# MAGIC The goal of this script is to create hospitalizations Bronze table 
 # MAGIC 
 # MAGIC The following tables are read:
 # MAGIC 
 # MAGIC | Table |
 # MAGIC | ------ |
-# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv' |
+# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/hospitalizations.csv' |
 # MAGIC 
 # MAGIC 
 # MAGIC The following tables are created:
 # MAGIC 
 # MAGIC | Tables |
 # MAGIC | ------ |
-# MAGIC | 'bronze.epidemiology'|
+# MAGIC | 'bronze_hospitalizations'|
 
 # COMMAND ----------
 
+import pyspark.sql.types as T
 import pyspark.sql.functions as F
 import datetime as dt
 import os
@@ -31,13 +32,13 @@ from delta.tables import *
 # COMMAND ----------
 
 #General Configuration
-bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/epidemiology"
-checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/epidemiology"
-raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv"
+bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/hospitalizations"
+checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/hospitalizations"
+raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/hospitalizations.csv"
 table = "bigquery-public-data.covid19_open_data.covid19_open_data"
 project_id = "reckitt-training-cloud"
 bronze_database = "rajat"
-bronze_table_name = "bronze_epidemiology" 
+bronze_table_name = "bronze_hospitalizations" 
 partition_by = "date"
 
 # COMMAND ----------
@@ -59,19 +60,20 @@ partition_by = "date"
 
 # COMMAND ----------
 
-epidemiology_df = bq_df.select(
-    "date",      
-    "location_key",      
-    "new_confirmed",     
-    "new_deceased",      
-    "new_recovered",     
-    "new_tested",        
-    "cumulative_confirmed",      
-    "cumulative_deceased",       
-    "cumulative_recovered",      
-    "cumulative_tested"       
+hospitalizations_df = bq_df.select(
+    "date",                      
+    "location_key",                      
+    "new_hospitalized_patients",                     
+    "cumulative_hospitalized_patients",                      
+    "current_hospitalized_patients",                     
+    "new_intensive_care_patients",                       
+    "cumulative_intensive_care_patients",                        
+    "current_intensive_care_patients",                       
+    "new_ventilator_patients",                       
+    "cumulative_ventilator_patients",                        
+    "current_ventilator_patients"                                                              
 )
-df = df.limit(2000)
+df = df.limit(100)
 
 # COMMAND ----------
 
@@ -110,6 +112,7 @@ def replace_where(df, batchId):
 
 # COMMAND ----------
 
+logging.info(f'writing data to Bronze Layer')
 (df
     .write
     .format('delta')
@@ -119,6 +122,7 @@ def replace_where(df, batchId):
     .partitionBy(partition_by)
     .option('path', bronze_datalake_location)
     .saveAsTable(f'{bronze_database}.{bronze_table_name}'))
+logging.info(f'finished writing data to Bronze Layer: {bronze_database}.{bronze_table_name}')
 
 # COMMAND ----------
 

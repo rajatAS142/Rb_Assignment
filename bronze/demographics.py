@@ -1,21 +1,21 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # epidemiology Bronze Table
+# MAGIC # demographics Bronze Table
 # MAGIC 
-# MAGIC The goal of this script is to create epidemiology Bronze table 
+# MAGIC The goal of this script is to create demographics Bronze table 
 # MAGIC 
 # MAGIC The following tables are read:
 # MAGIC 
 # MAGIC | Table |
 # MAGIC | ------ |
-# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv' |
+# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/demographics.csv' |
 # MAGIC 
 # MAGIC 
 # MAGIC The following tables are created:
 # MAGIC 
 # MAGIC | Tables |
 # MAGIC | ------ |
-# MAGIC | 'bronze.epidemiology'|
+# MAGIC | 'bronze_demographics'|
 
 # COMMAND ----------
 
@@ -27,18 +27,19 @@ import io
 from re import sub
 debug = False
 from delta.tables import *
+from pyspark.sql.window import Window
 
 # COMMAND ----------
 
 #General Configuration
-bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/epidemiology"
-checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/epidemiology"
-raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv"
+bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/demographics"
+checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/demographics"
+raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/demographics.csv"
 table = "bigquery-public-data.covid19_open_data.covid19_open_data"
 project_id = "reckitt-training-cloud"
 bronze_database = "rajat"
-bronze_table_name = "bronze_epidemiology" 
-partition_by = "date"
+bronze_table_name = "bronze_demographics" 
+partition_by = "location_key"
 
 # COMMAND ----------
 
@@ -59,19 +60,27 @@ partition_by = "date"
 
 # COMMAND ----------
 
-epidemiology_df = bq_df.select(
-    "date",      
+demographics_df = bq_df.select(
     "location_key",      
-    "new_confirmed",     
-    "new_deceased",      
-    "new_recovered",     
-    "new_tested",        
-    "cumulative_confirmed",      
-    "cumulative_deceased",       
-    "cumulative_recovered",      
-    "cumulative_tested"       
-)
-df = df.limit(2000)
+    "population",        
+    "population_male",       
+    "population_female",     
+    "population_rural",      
+    "population_urban",      
+    "population_largest_city",       
+    "population_clustered",      
+    "population_density",        
+    "human_development_index",       
+    "population_age_00_09",      
+    "population_age_10_19",      
+    "population_age_20_29",      
+    "population_age_30_39",      
+    "population_age_40_49",      
+    "population_age_50_59",      
+    "population_age_60_69",      
+    "population_age_70_79",      
+    "population_age_80_and_older"     
+).withColumn("date", F.current_timestamp())
 
 # COMMAND ----------
 
@@ -110,6 +119,7 @@ def replace_where(df, batchId):
 
 # COMMAND ----------
 
+logging.info(f'writing data to Bronze Layer')
 (df
     .write
     .format('delta')
@@ -119,6 +129,7 @@ def replace_where(df, batchId):
     .partitionBy(partition_by)
     .option('path', bronze_datalake_location)
     .saveAsTable(f'{bronze_database}.{bronze_table_name}'))
+logging.info(f'finished writing data to Bronze Layer: {bronze_database}.{bronze_table_name}')
 
 # COMMAND ----------
 

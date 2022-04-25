@@ -1,24 +1,25 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # epidemiology Bronze Table
+# MAGIC # vaccinations Bronze Table
 # MAGIC 
-# MAGIC The goal of this script is to create epidemiology Bronze table 
+# MAGIC The goal of this script is to create vaccinations Bronze table 
 # MAGIC 
 # MAGIC The following tables are read:
 # MAGIC 
 # MAGIC | Table |
 # MAGIC | ------ |
-# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv' |
+# MAGIC | 'https://storage.googleapis.com/covid19-open-data/v3/vaccinations.csv' |
 # MAGIC 
 # MAGIC 
 # MAGIC The following tables are created:
 # MAGIC 
 # MAGIC | Tables |
 # MAGIC | ------ |
-# MAGIC | 'bronze.epidemiology'|
+# MAGIC | 'bronze_vaccinations'|
 
 # COMMAND ----------
 
+import pyspark.sql.types as T
 import pyspark.sql.functions as F
 import datetime as dt
 import os
@@ -31,13 +32,13 @@ from delta.tables import *
 # COMMAND ----------
 
 #General Configuration
-bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/epidemiology"
-checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/epidemiology"
-raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/epidemiology.csv"
+bronze_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/vaccinations"
+checkpoint_path= "dbfs:/FileStore/RAJAT/CONFIG/autoloader_checkpoints/vaccinations"
+raw_table_path = "https://storage.googleapis.com/covid19-open-data/v3/vaccinations.csv"
 table = "bigquery-public-data.covid19_open_data.covid19_open_data"
 project_id = "reckitt-training-cloud"
 bronze_database = "rajat"
-bronze_table_name = "bronze_epidemiology" 
+bronze_table_name = "bronze_vaccinations" 
 partition_by = "date"
 
 # COMMAND ----------
@@ -51,27 +52,11 @@ partition_by = "date"
 # MAGIC import pandas
 # MAGIC data = pandas.read_csv(raw_table_path)
 # MAGIC df = spark.createDataFrame(data)
-# MAGIC 
+# MAGIC df = df.limit(100)
 # MAGIC bq_df = spark.read.format("bigquery") \
 # MAGIC   .option("table", table) \
 # MAGIC   .option("project", project_id) \
 # MAGIC   .load()
-
-# COMMAND ----------
-
-epidemiology_df = bq_df.select(
-    "date",      
-    "location_key",      
-    "new_confirmed",     
-    "new_deceased",      
-    "new_recovered",     
-    "new_tested",        
-    "cumulative_confirmed",      
-    "cumulative_deceased",       
-    "cumulative_recovered",      
-    "cumulative_tested"       
-)
-df = df.limit(2000)
 
 # COMMAND ----------
 
@@ -110,6 +95,7 @@ def replace_where(df, batchId):
 
 # COMMAND ----------
 
+logging.info(f'writing data to Bronze Layer')
 (df
     .write
     .format('delta')
@@ -119,6 +105,7 @@ def replace_where(df, batchId):
     .partitionBy(partition_by)
     .option('path', bronze_datalake_location)
     .saveAsTable(f'{bronze_database}.{bronze_table_name}'))
+logging.info(f'finished writing data to Bronze Layer: {bronze_database}.{bronze_table_name}')
 
 # COMMAND ----------
 
