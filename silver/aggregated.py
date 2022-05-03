@@ -32,14 +32,20 @@ import io
 from re import sub
 debug = False
 from delta.tables import *
+import smtplib
+import pandas
 
 # COMMAND ----------
 
 #General Configuration
+script_execution_start_time = dt.datetime.now()
+app_name = 'covid-19'
 silver_datalake_location = "dbfs:/FileStore/RAJAT/BRONZE/aggergated"
 silver_database = "rajat"
 silver_table_name = "silver_aggregated" 
 partition_by = "location_key"
+notebook_name = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+logger = logging.getLogger(app_name)
 
 # COMMAND ----------
 
@@ -48,22 +54,22 @@ partition_by = "location_key"
 
 # COMMAND ----------
 
-logging.info(f'reading source table: rajat.bronze_demographics')
+logger.info(f'reading source table: rajat.bronze_demographics')
 demographics_df = spark.table('rajat.bronze_demographics')
 
-logging.info(f'reading source table: rajat.bronze_epidemiology')
+logger.info(f'reading source table: rajat.bronze_epidemiology')
 epidemiology_df = spark.table('rajat.bronze_epidemiology')
 
-logging.info(f'reading source table: rajat.bronze_hospitalizations')
+logger.info(f'reading source table: rajat.bronze_hospitalizations')
 hospitalizations_df = spark.table('rajat.bronze_hospitalizations')
 
-logging.info(f'reading source table: rajat.bronze_health')
+logger.info(f'reading source table: rajat.bronze_health')
 health_df = spark.table('rajat.bronze_health')
 
-logging.info(f'reading source table: rajat.bronze_mobility')
+logger.info(f'reading source table: rajat.bronze_mobility')
 mobility_df = spark.table('rajat.bronze_mobility')
 
-logging.info(f'reading source table: rajat.bronze_vaccinations')
+logger.info(f'reading source table: rajat.bronze_vaccinations')
 vaccinations_df = spark.table('rajat.bronze_vaccinations')
 
 # COMMAND ----------
@@ -73,9 +79,11 @@ vaccinations_df = spark.table('rajat.bronze_vaccinations')
 
 # COMMAND ----------
 
+logger.info(f'applying transformation ')
 df = epidemiology_df.join(hospitalizations_df, ['location_key', 'date'], "left")\
                     .join(mobility_df, ['location_key', 'date'], "left")\
                     .join(vaccinations_df, ['location_key', 'date'], "left")
+logger.info(f'df count after transformation: {df.count()}')
 
 # COMMAND ----------
 
@@ -173,4 +181,23 @@ else:
 
 # COMMAND ----------
 
-dbutils.notebook.exit('....')
+logging.info('writing data in bigquery')
+(df.write.format("bigquery")
+  .option('project_id', 'rekitt-training-cloud')
+  .option("table","rekitt-training-cloud.rajat_kashyap.aggregated")
+  .save())
+
+# COMMAND ----------
+
+script_execution_end_time = dt.datetime.now()
+
+final_output = {
+                'notebook_name': notebook_name, 
+                'start_timestamp': script_execution_start_time.strftime('%Y-%m-%d %H:%m:%S'), 
+                'end_timestamp': script_execution_end_time.strftime('%Y-%m-%d %H:%m:%S'),
+                'duration': str(script_execution_end_time - script_execution_start_time),
+               }
+
+# COMMAND ----------
+
+dbutils.notebook.exit('final_output')
